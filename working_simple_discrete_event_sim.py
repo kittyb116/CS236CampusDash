@@ -3,8 +3,8 @@ import heapq
 import itertools
 from typing import Any, Optional, Tuple
 import random
-"""Dijkstra implementation (baseline) -- awaiting dataset"""
 
+"""WeightedGraph class """
 class WeightedGraph: 
     def __init__(self):
         self.adjList_edges = {}
@@ -185,20 +185,18 @@ class PriorityQueue:
         return len(self.elements) == 0
     def __str__(self):
         return f"{self.elements}"
-#keep track of the statistics in the Car object
-#at time t how many cars have used that edge 
-class Car:
-    def __init__(self, car_id: int, startNode: Any, endNode: Any , dij_path):
-        self.car_id = car_id
-        self.start_node = startNode
-        self.end_node = endNode
-        self.position = 0
-        self.dij_path = dij_path
-        self.dij_cost = 0
-        self.sim_cost = 0
-        self.done = False
-    def __str__(self):
-        return f"Car(id={self.id}, start={self.start_node}, position={self.position}, end={self.end_node}, dij_path={self.dij_path}, dij_cost ={self.dij_cost}, sim_cost ={self.sim_cost})"
+
+class Dasher:
+    def __init__(self, startLocation: Any, startTime: Any , endTime: Any):
+        self.startLocation = startLocation
+        self.startTime = startTime
+        self.endTime = endTime
+       # self.dij_path = dij_path
+       # self.dij_cost = 0
+       # self.sim_cost = 0
+       # self.done = False
+    #def __str__(self):
+    #
     
 def read_graph(fname):
     # Open the file
@@ -227,26 +225,22 @@ def read_graph(fname):
     file.close()
     return wg 
 """
-Reads the agents file and stores them in a list of Car objects
+To change: define read_dashers for 
 """
-def read_agents(fname):
+def read_dashers(fname):
     # Open the file
     file = open(fname, "r")
-    # Set up your list of agents
-    agents=[]
-    id = 1
+    # Set up your list of dashers
+    dashers=[]
+    #id = 1
     # Next, read the agents and build the list
+    file.readline()
     for line in file:
-        # agent is a list of 2 indices representing a pair of vertices
-        # path[0] contains the start location (index between 0 and numVertices-1)
-        # path[1] contains the destination location (index between 0 and numVertices-1)
-        path = line.strip().split(",")
-        car = Car(id, int(path[0]), int(path[1]), [])
-        agents.append(car)
-        id = id + 1
+        x,y,z = line.split(",")
+        dashers.append((int(x),int(y),int(z)))
     # Close the file safely after done reading
     file.close()
-    return agents
+    return dashers
 
 
 """
