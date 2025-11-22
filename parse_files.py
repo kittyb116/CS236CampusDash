@@ -46,6 +46,8 @@ so that the first ever event starts at time = 0 instead of some other arbitrary 
 
 I've already done some preprocessing on the dashers.csv to ensure that each dasher's start_time
 is less than their exit_time
+
+Additionally, I require that every task have a appear time that is less than the target time
 '''
 
 def adjust_time_zero(dasher_fn, task_fn):
@@ -54,7 +56,7 @@ def adjust_time_zero(dasher_fn, task_fn):
 
     # find the minimum value in both files
     dasher_min = dasher['start_time'].min()
-    task_min = task['minute'].min()
+    task_min = task['minute'].min()-1
     
     # find the absolute minimum
     zero_time = min(dasher_min, task_min)
@@ -72,3 +74,4 @@ def adjust_time_zero(dasher_fn, task_fn):
 
     dasher.to_csv(new_dasher_fn, index = False)
     task.to_csv(new_task_fn, index = False)
+
