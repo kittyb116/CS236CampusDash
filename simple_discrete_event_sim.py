@@ -2,10 +2,239 @@ from __future__ import annotations
 import heapq
 import itertools
 from typing import Any, Optional, Tuple
-from collections import Counter
-from queue import Queue
-from WeightedGraphImplementation import WeightedGraph
-from numpy import random as np_ran
+import random
+
+from parse_files import read_dashers, read_tasklog
+
+"""WeightedGraph class """
+class WeightedGraph: 
+    def __init__(self):
+        self.adjList_edges = {}
+    
+    def addNode(self,node):
+        if node not in self.adjList_edges:
+            self.adjList_edges[node] = []
+
+    def addEdge(self,node1, node2, weight):
+        if node1 in self.adjList_edges and node2 in self.adjList_edges:
+            self.adjList_edges[node1].append((node2, weight))
+    def modifyWeight(self,node1, node2, weight):
+        if (node1 not in self.adjList_edges or node2 not in self.adjList_edges):
+            print("One of the nodes is not in the list")
+        else:
+            for i in range(len(self.adjList_edges[node1])):
+                if (self.adjList_edges[node1][i][0] == node2):
+                    self.adjList_edges[node1][i] = (node2,weight)
+            for i in range(len(self.adjList_edges[node2])):
+                if (self.adjList_edges[node2][i][0] == node1):
+                    self.adjList_edges[node2][i] = (node1,weight)
+    def getNeighbors(self,node):
+        return self.adjList_edges.get(node, [])
+
+    def getNodes(self):
+        return self.adjList_edges.keys()
+    def __str__(self):
+        return f"{self.adjList_edges}"
+
+    def dijkstra_shortest_path(self,start_node, end_node): 
+        '''
+        @param: start node, end node
+        @return: a tuple containing a list of visited elements, total cost 
+        '''
+        if (start_node not in self.adjList_edges or end_node not in self.adjList_edges): 
+            return ("One of the nodes does not exist... Must add first")
+        if (start_node == end_node): 
+            return ([start_node], 0)
+        
+        distances = {}
+        for node in self.adjList_edges.keys():
+            distances[node] = float('inf')
+
+        distances[start_node] = 0
+        
+        pred = {} #predecessor that store the node we used to get to our current node
+        for node in self.adjList_edges.keys():
+            pred[node] = None
+        visited = []
+        pq = PriorityQueue()
+
+        for node in self.adjList_edges.keys():
+            pq.insert(node, distances[node]) #distances = priority
+        
+        while not pq.isEmpty():
+            min_tuple = pq.extractMin()
+            if min_tuple is None:
+                break
+            
+            current_node, current_distance = min_tuple
+            
+            #avoids repetitions
+            if current_node in visited:
+                continue
+            visited.append(current_node)
+
+            if current_node == end_node:
+                break
+
+            neighbors = self.adjList_edges[current_node]
+
+            for neighb, cost in neighbors:
+                if neighb not in visited:
+                    #calculates the new distances
+                    newDist = distances[current_node] + cost
+                    #updates the cost of current node 
+                    if newDist < distances[neighb]:
+                        distances[neighb] = newDist
+                        pred[neighb] = current_node
+                        pq.insert(neighb, newDist)
+        if distances[end_node] == float('inf'):
+            return([],float('inf'))
+        path = []
+        i = end_node
+        # starts from the end node and iterates back to get the path
+        while i is not None:
+            path.insert(0,i)
+            i = pred[i]
+        return(path,distances[end_node])   
+    
+    def get_edge_weight(self, node1, node2):
+        """
+        Returns the base weight of the edge from node1 to node2.
+        Returns None if the edge does not exist.
+        """
+        for neighbor, weight in self.adjList_edges.get(node1, []):
+            if neighbor == node2:
+                return weight
+        return None
+
+
+
+class PriorityQueue: 
+    #elements = [(item,priority), (item2,priority2),....]
+    def __init__(self):
+        self.elements = []
+    def heapifyUp(self,nodeIndex):
+        if (nodeIndex > 0 ): 
+            tempNode = self.elements[nodeIndex]
+            parentIndex = int((nodeIndex-1)/2)
+            parentNode = self.elements[parentIndex]
+            if (parentNode[1] > tempNode[1]): 
+                # Swap temp node with its parent
+                temp = tempNode
+                self.elements[nodeIndex] = parentNode
+                self.elements[parentIndex] = temp
+                self.heapifyUp(parentIndex)
+
+    def heapifyDown(self, nodeIndex):
+        """
+        Moves a node down the heap to maintain min-heap property.
+        A node is swapped with its smaller child until it's in the correct position.
+        """
+        smallest = nodeIndex
+        leftChildIndex = 2 * nodeIndex + 1
+        rightChildIndex = 2 * nodeIndex + 2
+    
+        # Check if left child exists and is smaller than current node
+        if leftChildIndex < len(self.elements):
+            if self.elements[leftChildIndex][1] < self.elements[smallest][1]:
+                smallest = leftChildIndex
+    
+        # Check if right child exists and is smaller than current smallest
+        if rightChildIndex < len(self.elements):
+            if self.elements[rightChildIndex][1] < self.elements[smallest][1]:
+                smallest = rightChildIndex
+    
+        # If smallest is not the current node, swap and continue heapifying
+        if smallest != nodeIndex:
+            self.elements[nodeIndex], self.elements[smallest] = \
+                self.elements[smallest], self.elements[nodeIndex]
+            self.heapifyDown(smallest)
+    '''
+    Adds an item to the queue with an associated priority.
+    '''
+    def insert(self,item, priority):
+        self.elements.append((item,priority))
+        self.heapifyUp(len(self.elements)-1) 
+    '''
+    Removes the item with the minimum priority from the queue and returns it. If the
+    queue is empty, this can return None.
+    '''
+    def extractMin(self):
+        if(self.isEmpty()):
+            return
+        min = self.elements[0]
+        self.elements[0] = self.elements[len(self.elements)-1]
+        del self.elements[-1]
+        if (not self.isEmpty()):
+            self.heapifyDown(0)
+        return min      
+    '''
+    Finds the item in the queue and updates its priority to this
+    new value provided,priority. You can assume that the new priority 
+    will always be less than the item’s current priority. Note that 
+    your code should place the item to its correct position after the change.'''
+    def decreaseKey(self,item, priority):
+        for i, (it, p) in enumerate(self.elements):
+            if(it == item):
+                self.elements[i] = (item, priority)
+                self.heapifyUp(i)
+                return
+
+    '''
+    Returns True if the priority queue is empty, and False otherwise.
+    '''
+    def isEmpty(self):
+        return len(self.elements) == 0
+    def __str__(self):
+        return f"{self.elements}"
+
+class Dasher:
+    def __init__(self, start_location: Any, start_time: Any , end_time: Any, dasher_id):
+        self.start_location = start_location
+        self.start_time = start_time
+        self.end_time = end_time
+        self.available = True
+        self.dasher_id = dasher_id
+    
+    """"""    
+    # def move_next_edge(self, car_id):
+    
+#Could be easier to create a task object to reference different attributes
+class Task:
+    def __init__(self, vertex_id, appear_time, target, reward, task_id):
+        self.vertex_id=vertex_id
+        self.appear_time=appear_time
+        self.target_time= target
+        self.reward = reward
+        self.task_id = task_id
+
+def read_graph(fname):
+    # Open the file
+    file = open(fname, "r")
+    # Read the first line that contains the number of vertices
+    # numVertices is the number of vertices in the graph (n)
+    numVertices = file.readline()
+    wg = WeightedGraph()
+
+    # You might need to add some code here to set up your graph object
+    # Next, read the edges and build the graph
+    for line in file:
+        # edge is a list of 3 indices representing a pair of adjacent vertices and the weight
+        # edge[0] contains the first vertex (index between 0 and numVertices-1)
+        # edge[1] contains the second vertex (index between 0 and numVertices-1)
+        # edge[2] contains the weight of the edge (a positive integer)
+        edge = line.strip().split(",")
+    # Use the edge information to populate your graph object
+    # TODO: Add your code here
+        if (int(edge[0]) not in wg.getNodes()):
+            wg.addNode(int(edge[0]))
+        if (int(edge[1]) not in wg.getNodes()):
+            wg.addNode(int(edge[1]))
+        wg.addEdge(int(edge[0]),int(edge[1]),int(edge[2]))
+    # Close the file safely after done reading
+    file.close()
+    return wg 
+
 
 """
 simple_discrete_event_sim.py
@@ -15,7 +244,11 @@ event_id and optional payload. Event behavior is implemented by
 overriding the Simulator.handle(event_id, payload) method using a
 simple switch (if/elif) inside it.
 """
-
+"""
+you cant run sim for both algorithms at the same time..
+two code files two classes for baseline and algorithm X
+put flags in the code and decide which algorithm 
+"""
 class EventHandle:
     """Simple cancelable handle for a scheduled event."""
     __slots__ = ("_cancelled",)
@@ -26,41 +259,17 @@ class EventHandle:
     @property
     def cancelled(self) -> bool:
         return self._cancelled
-    
-class Cars:
-    def __init__(self, start, end):
-        self.start = start
-        self.end = end
-        self.path = []
-        self.total_cost = 0
-
-        # I just added this attribute to make it easy to implement Dijkstra
-        self.planned_paths = Queue()
-    
-    def add_path(self, node, time, cost):
-        self.path.append((node, time))
-        self.total_cost += cost
-    
-    def set_predetermined_path(self, path_list):
-        for edge in path_list:
-            self.planned_paths.put(edge)
-
-    # just need to modify this part to get the next node
-    def get_next_node(self):
-        if not self.planned_paths.empty():
-            return self.planned_paths.get()
 
 class Simulator:
     """Minimal discrete-event simulator.
     Subclass and override handle(event_id, payload) with a switch-case.
     """
-    def __init__(self, edge_weights, start_time: float = 0.0) -> None:
+    def __init__(self, start_time: float = 0.0) -> None:
         self.now = float(start_time)
         self._queue: list[Tuple[float, int, Any, Any, EventHandle]] = []
         self._seq = itertools.count()
         self._stopped = False
         self.events_processed = 0
-        self.edge_weights = edge_weights
 
     def schedule_at(self, time: float, event_id: Any, payload: Any = None) -> EventHandle:
         if time < self.now:
@@ -71,69 +280,24 @@ class Simulator:
         return h
 
     def _pop_next(self):
-        '''
-        I have modified this code to instead keep popping off events until the next event is 
-        occurs at a different time
-        The method now returns a list of events 
-        '''
-        events = []
-        same_time = True # state variable to check if the previous event is still the same time
-        prev_time = None # keep track of what the prev time
-        while self._queue and same_time:
-            time, seq, event_id, payload, h = self._queue[0]
-            if time == prev_time or prev_time is None:
-                time, seq, event_id, payload, h = heapq.heappop(self._queue)
-                if not h.cancelled:
-                    # time, event_id will be 
-                    events.append((time, event_id, payload))
-                    prev_time = time
-            else:
-                same_time = False
+        while self._queue:
+            time, seq, event_id, payload, h = heapq.heappop(self._queue)
+            if not h.cancelled:
+                return time, event_id, payload
             # skipped cancelled
-        return events
+        return None
 
     def step(self) -> bool:
-        '''
-        Changed it a little bit so to work with modifications
-        '''
         if self._stopped:
             return False
-        events_list = self._pop_next()
-        if events_list is None:
+        item = self._pop_next()
+        if item is None:
             return False
-        time = events_list[0][0]
+        time, event_id, payload = item
         self.now = time
-
-        # calculate congestion + assign which event goes with which edge
-        edge_counter = Counter()
-        all_edges = []
-        new_events = []
-        for event in events_list:
-            _, event_id, payload = event
-            if event_id == 'A':
-                car, curr_node = payload
-                next_node = car.get_next_node() # you would have to modify here to get next node and you can modify all you want!!!
-                if next_node is not None:
-                    edge = (curr_node,next_node)
-                    payload = (car, edge)
-                    new_events.append((event_id, payload))
-                    all_edges.append(edge)
-            else:
-                new_events.append((event_id, payload))
-                
-        edge_counter.update(all_edges)
-        
-        for event in new_events:
-            event_id, payload = event
-            if event_id == 'A':
-                car, edge = payload
-                cost_of_edge = edge_counter[edge] * self.edge_weights[edge]
-                print(f"curr time is {self.now} and the edge {edge} has cost {cost_of_edge}")
-                payload = (car, edge, cost_of_edge)
-            self.handle(event_id, payload)
-
         # dispatch to user-defined handler
-        self.events_processed += len(events_list)
+        self.handle(event_id, payload)
+        self.events_processed += 1
         return True
 
     def run(self, until: Optional[float] = None, max_events: Optional[int] = None) -> None:
@@ -155,112 +319,90 @@ class Simulator:
 
     def handle(self, event_id: Any, payload: Any) -> None:
         """Override in a subclass with a simple switch (if/elif) on event_id."""
-        if event_id == "stop":
-            print(f"[{self.now:.3f}] stopping")
-            self.stop()
-        elif event_id == 'A':
-            car, edge, cost = payload
-            prev, curr = edge
-            car.add_path(prev,self.now,cost)
-            self.schedule_at(self.now + cost, 'A', (car, curr))
-        else:
-            print(f"[{self.now:.3f}] unknown event {event_id!r} -> {payload}")
-            
-# methods to load in the graphs and agents
+        raise NotImplementedError("Override handle(event_id, payload)")
 
-def read_graph(fname):
-    # Open the file
-    file = open(fname, "r")
-    # Read the first line that contains the number of vertices
-    # numVertices is the number of vertices in the graph (n)
-    numVertices = file.readline()
 
-    # You might need to add some code here to set up your graph object
-    graph = WeightedGraph()
-    # also adding another dictionary to get the base weights here
-    edge_weights = {}
-
-    # Next, read the edges and build the graph
-    for line in file:
-        # edge is a list of 3 indices representing a pair of adjacent vertices and the weight
-        # edge[0] contains the first vertex (index between 0 and numVertices-1)
-        # edge[1] contains the second vertex (index between 0 and numVertices-1)
-        # edge[2] contains the weight of the edge (a positive integer)
-        edge = line.strip().split(",")
-
-        graph.addNode(int(edge[0]))
-        graph.addNode(int(edge[1]))
-        graph.addEdge(int(edge[0]), int(edge[1]), int(edge[2]))
-        edge_weights[(int(edge[0]), int(edge[1]))] = int(edge[2])
-    
-    # Close the file safely after done reading
-    file.close()
-    return graph, edge_weights
-
-def read_agents(fname):
-    # Open the file
-    file = open(fname, "r")
-    # Set up your list of agents
-    agents=[]
-
-    # Next, read the agents and build the list
-    for line in file:
-        # agent is a list of 2 indices representing a pair of vertices
-        # path[0] contains the start location (index between 0 and numVertices-1)
-        # path[1] contains the destination location (index between 0 and numVertices-1)
-        path = line.strip().split(",")
-        agents.append((int(path[0]), int(path[1])))
-    
-    # Close the file safely after done reading
-    file.close()
-    return agents
-
-    
 # Example usage with a simple switch-case style handler
 if __name__ == "__main__":
-    graph_fn = 'input/grid100.txt'
-    agents_fn = 'input/agents100.txt'
+    # simple simpulator that extends the main simulator
+    class SimpleSim(Simulator):
+        def __init__(self, graph_file: str):
+            super().__init__()
+            self.graph = read_graph(graph_file)
+            self.available_tasks = []
+            self.global_reward = 0
 
-    graph, edge_weights = read_graph(graph_fn)
-    agents = read_agents(agents_fn)
-    num_agents = len(agents)
+        def handle(self, event_id: str, payload: Any) -> None:
+            # simple switch-case implemented with if/elif
+            if event_id == "dasher_arrival": #Dasher arrives at a new node (event created anytime dasher moves to a node)
+                self.handle_dasher_arrival(payload)
+            elif event_id == "task_arrival": #Task appears in system 
+                self.handle_task_arrival(payload)
+            elif event_id == "stop":
+                print(f"[{self.now:.3f}] stopping")
+                self.stop()
+            else:
+                print(f"[{self.now:.3f}] unknown event {event_id!r} -> {payload}")
+        
+        """code for dasher arrival """
+        def handle_dasher_arrival(self, payload):
+            dasher, loc = payload
+            possible_tasks = []
+            print(f'current dasher id: {dasher.dasher_id}')
+            # iterate through all possible tasks to find possible tasks
+            for task in self.available_tasks:
+                task_loc = task.vertex_id
+                task_time = task.target_time
+                _, time = self. graph.dijkstra_shortest_path(loc, task_loc)
+                # find all possible tasks
+                if (task_time <= dasher.end_time) and (self.now +time == task_time):
+                    possible_tasks.append((task, time))
+            # only do if there exists a possible task
+            if len(possible_tasks) > 0:
+                # find the closest task
+                task,time = min(possible_tasks, key=lambda x:x[1])
+                # add the reward + remove from list of available tasks
+                self.global_reward += task.reward
+                print('Task will be completed')
+                print(f'the reward now is {self.global_reward}')
+                self.available_tasks.remove(task)
+                sim.schedule_at(task.target_time, 'dasher_arrival', [dasher, task.vertex_id])
+
+        """Psuedocode for task arrival"""
+        def handle_task_arrival(self,payload):
+            task = payload
+            self.available_tasks.append(task)
+        
+# ------- Start Simulator ----------
+    sim = SimpleSim("project_files/grid100.txt")
+
+    # relevant files
+    dasher_fn = 'project_files/dashers_time_adjusted_trunc.csv'
+    tasklog_fn = 'project_files/tasklog_time_adjusted_trunc.csv'
     
-    # generate inter-arrival times
-    time_between_calls = np_ran.default_rng().exponential(scale=1, size=(num_agents-1))
-    # convert it to integers
-    interarrival_time = [0] + [round(i) for i in time_between_calls]
+    # get relevant information from files
+    dasher_info = read_dashers(dasher_fn)
+    tasklog_info = read_tasklog(tasklog_fn, (5,10))
 
-    # first instantiate all of the car objects + run dijkstra
-    cars = []
-    for i in range(num_agents):
-        start, end = agents[i]
-        get_path, cost = graph.dijkstra_shortest_path(start, end)
-        cars.append(Cars(start, end))
-        cars[i].set_predetermined_path(get_path)
+    # create arrival and departure events along with objects 
+    counter = 0
+    for dasher in dasher_info:
+        loc, start, end = dasher
+        curr_dasher = Dasher(loc, start, end, counter)
+        # create arrival and departure events already
+        sim.schedule_at(start, 'dasher_arrival', [curr_dasher, loc])
+        counter += 1
 
-    sim = Simulator(edge_weights=edge_weights)
+    counter = 0
+    for tasklog in tasklog_info:
+        loc, appear, end, reward = tasklog
+        print(f'reward for task {counter} is {reward}')
+        curr_task = Task(loc, appear, end, reward, counter)
+        # create task arrival and departure event
+        sim.schedule_at(appear, 'task_arrival', curr_task)
+        counter += 1
 
-    # schedule starting event for each car
-    t = 0 # help to determine actual time of arrivals
-    arrival_time = []
-    for i in range(num_agents):
-        t += interarrival_time[i]
-        arrival_time.append(t)
-        curr_car = cars[i]
-        first_node = curr_car.get_next_node()
-        if first_node is not None:
-            sim.schedule_at(t, 'A', (curr_car, first_node))
-    
-    #sim.schedule_at(15, 'stop', None)
-    
     sim.run()
+
     print("events processed:", sim.events_processed)
-
-    total_cong = 0
-    for i in range(num_agents):
-        curr_car = cars[i]
-        total_cong += curr_car.total_cost
-        print(f"Car {i} ({curr_car.start}, {curr_car.end}), arrived at t={arrival_time[i]}, with path {curr_car.path}")
-
-    print(f'Average Congestion: {total_cong/num_agents}')
-    print(f'Total Congestion: {total_cong}')
+    print(sim.global_reward)
