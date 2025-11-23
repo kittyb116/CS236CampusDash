@@ -353,10 +353,13 @@ if __name__ == "__main__":
             for task in self.available_tasks:
                 task_loc = task.vertex_id
                 task_time = task.target_time
-                _, time = self. graph.dijkstra_shortest_path(loc, task_loc)
-                # find all possible tasks
-                if (task_time <= dasher.end_time) and (self.now +time == task_time):
-                    possible_tasks.append((task, time))
+                if task_time < self.now:
+                    self.available_tasks.remove(task)
+                else:
+                    _, time = self. graph.dijkstra_shortest_path(loc, task_loc)
+                    # find all possible tasks
+                    if (task_time <= dasher.end_time) and (self.now +time == task_time):
+                        possible_tasks.append((task, time))
             # only do if there exists a possible task
             if len(possible_tasks) > 0:
                 # find the closest task
