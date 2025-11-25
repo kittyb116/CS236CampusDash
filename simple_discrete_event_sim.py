@@ -331,6 +331,7 @@ if __name__ == "__main__":
             self.graph = read_graph(graph_file)
             self.available_tasks = []
             self.global_reward = 0
+            self.tasks_completed = 0
 
         def handle(self, event_id: str, payload: Any) -> None:
             # simple switch-case implemented with if/elif
@@ -366,6 +367,7 @@ if __name__ == "__main__":
                 task,time = min(possible_tasks, key=lambda x:x[1])
                 # add the reward + remove from list of available tasks
                 self.global_reward += task.reward
+                self.tasks_completed += 1 
                 print('Task will be completed')
                 print(f'the reward now is {self.global_reward}')
                 self.available_tasks.remove(task)
@@ -406,6 +408,6 @@ if __name__ == "__main__":
         counter += 1
 
     sim.run()
-
+    print(f"tasks completed: {sim.tasks_completed}")
     print("events processed:", sim.events_processed)
-    print(sim.global_reward)
+    print("Total rewards:", sim.global_reward)
