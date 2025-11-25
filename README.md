@@ -12,3 +12,6 @@ randomly generate the arrival (can use some numpy.random (0, minute[i]) and rewa
 do NOT have to care about congestion
 
 using predictions to feed into simulation (phase 2 is a separate step and not linked to the simulator)
+
+Max Flow implementation:
+https://github.com/karnigili/MaxFlow
