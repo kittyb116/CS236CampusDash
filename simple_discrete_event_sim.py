@@ -387,7 +387,7 @@ if __name__ == "__main__":
     
     # get relevant information from files
     dasher_info = read_dashers(dasher_fn)
-    tasklog_info = read_tasklog(tasklog_fn, (5,10))
+    tasklog_info = read_tasklog(tasklog_fn, (5,10)) 
 
     # create arrival and departure events along with objects 
     counter = 0
