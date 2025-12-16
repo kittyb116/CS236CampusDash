@@ -349,7 +349,6 @@ if __name__ == "__main__":
         def handle_dasher_arrival(self, payload):
             dasher, loc = payload
             possible_tasks = []
-            print(f'current dasher id: {dasher.dasher_id}')
             # iterate through all possible tasks to find possible tasks
             for task in self.available_tasks:
                 task_loc = task.vertex_id
@@ -357,7 +356,7 @@ if __name__ == "__main__":
                 if task_time < self.now:
                     self.available_tasks.remove(task)
                 else:
-                    _, time = self. graph.dijkstra_shortest_path(loc, task_loc)
+                    _, time = self.graph.dijkstra_shortest_path(loc, task_loc)
                     # find all possible tasks
                     if (task_time <= dasher.end_time) and (self.now +time == task_time):
                         possible_tasks.append((task, time))
@@ -367,11 +366,9 @@ if __name__ == "__main__":
                 task,time = min(possible_tasks, key=lambda x:x[1])
                 # add the reward + remove from list of available tasks
                 self.global_reward += task.reward
-                self.tasks_completed += 1 
-                print('Task will be completed')
-                print(f'the reward now is {self.global_reward}')
                 self.available_tasks.remove(task)
-                sim.schedule_at(task.target_time, 'dasher_arrival', [dasher, task.vertex_id])
+                self.tasks_completed += 1
+                self.schedule_at(task.target_time, 'dasher_arrival', [dasher, task.vertex_id])
 
         """Psuedocode for task arrival"""
         def handle_task_arrival(self,payload):
@@ -379,35 +376,37 @@ if __name__ == "__main__":
             self.available_tasks.append(task)
         
 # ------- Start Simulator ----------
-    sim = SimpleSim("project_files/grid100.txt")
 
     # relevant files
-    dasher_fn = 'project_files/dashers_time_adjusted_trunc.csv'
-    tasklog_fn = 'project_files/tasklog_time_adjusted_trunc.csv'
-    
-    # get relevant information from files
+    dasher_fn = 'project_files/dashers_time_adjusted.csv'
     dasher_info = read_dashers(dasher_fn)
-    tasklog_info = read_tasklog(tasklog_fn, (5,10)) 
 
-    # create arrival and departure events along with objects 
-    counter = 0
-    for dasher in dasher_info:
-        loc, start, end = dasher
-        curr_dasher = Dasher(loc, start, end, counter)
-        # create arrival and departure events already
-        sim.schedule_at(start, 'dasher_arrival', [curr_dasher, loc])
-        counter += 1
+    for i in range(10):
+        sim = SimpleSim("project_files/grid100.txt")
+        tasklog_fn = 'project_files/tasklog_time_adjusted.csv'
+    
+        # get relevant information from files
+        tasklog_info = read_tasklog(tasklog_fn, (1,100))
 
-    counter = 0
-    for tasklog in tasklog_info:
-        loc, appear, end, reward = tasklog
-        print(f'reward for task {counter} is {reward}')
-        curr_task = Task(loc, appear, end, reward, counter)
-        # create task arrival and departure event
-        sim.schedule_at(appear, 'task_arrival', curr_task)
-        counter += 1
+        # create arrival and departure events along with objects 
+        counter = 0
+        for dasher in dasher_info:
+            loc, start, end = dasher
+            curr_dasher = Dasher(loc, start, end, counter)
+            # create arrival and departure events already
+            sim.schedule_at(start, 'dasher_arrival', [curr_dasher, loc])
+            counter += 1
 
-    sim.run()
-    print(f"tasks completed: {sim.tasks_completed}")
-    print("events processed:", sim.events_processed)
-    print("Total rewards:", sim.global_reward)
+        counter = 0
+        for tasklog in tasklog_info:
+            loc, appear, end, reward = tasklog
+            curr_task = Task(loc, appear, end, reward, counter)
+            # create task arrival and departure event
+            sim.schedule_at(appear, 'task_arrival', curr_task)
+            counter += 1
+
+        sim.run()
+
+        print("events processed:", sim.events_processed)
+        print("Total Reward:",sim.global_reward)
+        print("Number of Tasks Completed:", sim.tasks_completed)
