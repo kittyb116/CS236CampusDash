@@ -6,7 +6,6 @@ import random
 
 from parse_files import read_dashers, read_tasklog
 # this is the hungarian algorithm, which requires NumPy package
-from hungarian import Hungarian, HungarianError, CoverZeros
 from munkres import Munkres
 import munkres
 import numpy as np
@@ -515,3 +514,4 @@ if __name__ == "__main__":
         print(f"Total reward:{sim.global_reward}")
         print(f"Total number of tasks completed: {sim.task_completed}")
         print()
+
