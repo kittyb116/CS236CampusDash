@@ -24,7 +24,7 @@ def read_dashers(fname):
 '''
 Parses a tasklog csv and returns a tuple with rel information (loc, appear, end, reward)
 '''
-def read_tasklog(fname, reward_range: tuple):
+def read_tasklog(fname, reward_range: tuple, appearance_range = 60):
     result = []
     min_, max_ = reward_range
     # Open the file
@@ -34,7 +34,8 @@ def read_tasklog(fname, reward_range: tuple):
            end = int(line['minute'])
            start_pos = int(line['VERTEX'])
            # select any appearance time between 0 and time task needs to be completed
-           appear = random.randrange(0, end) if end > 0 else 0
+           start = max(0, end-appearance_range)
+           appear = random.randrange(start, end) if end > 0 else 0
            reward = random.randrange(min_, max_)
            result.append((start_pos, appear, end, reward))
     return result
@@ -74,4 +75,3 @@ def adjust_time_zero(dasher_fn, task_fn):
 
     dasher.to_csv(new_dasher_fn, index = False)
     task.to_csv(new_task_fn, index = False)
-
