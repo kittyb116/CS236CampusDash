@@ -8,7 +8,6 @@ from parse_files import read_dashers, read_tasklog
 # this is the hungarian algorithm, which requires NumPy package
 from munkres import Munkres
 import munkres
-import numpy as np
 
 """WeightedGraph class """
 class WeightedGraph: 
@@ -485,7 +484,7 @@ if __name__ == "__main__":
     
     dasher_info = read_dashers(dasher_fn)
 
-    for i in range(10):
+    for i in range(1):
         sim = SimpleSim("project_files/grid100.txt", 3)
     
         tasklog_info = read_tasklog(tasklog_fn, (1,100))
@@ -514,4 +513,3 @@ if __name__ == "__main__":
         print(f"Total reward:{sim.global_reward}")
         print(f"Total number of tasks completed: {sim.task_completed}")
         print()
-
