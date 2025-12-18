@@ -3,7 +3,6 @@ Code written here is to parse the files from both dashers.csv
 and tasklog.csv
 '''
 import csv
-import numpy as np
 import pandas as pd
 import random
 
@@ -75,3 +74,4 @@ def adjust_time_zero(dasher_fn, task_fn):
 
     dasher.to_csv(new_dasher_fn, index = False)
     task.to_csv(new_task_fn, index = False)
+
