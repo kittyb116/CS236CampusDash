@@ -381,7 +381,7 @@ if __name__ == "__main__":
     dasher_fn = 'project_files/dashers_time_adjusted.csv'
     dasher_info = read_dashers(dasher_fn)
 
-    for i in range(10):
+    for i in range(1):
         sim = SimpleSim("project_files/grid100.txt")
         tasklog_fn = 'project_files/tasklog_time_adjusted.csv'
     
